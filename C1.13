@@ -79,3 +79,22 @@ sacs = sum(acs_b)
 print('Sum of the inverse fourier transform of the yf where yf = [f(0)....f((L-1*2p)/L)] vector:',siftyf,'\n')
 print('Sum of the acs:',sacs,'\n')
 print('We verify that y closely approximates the ACS.')
+
+#QUESTION D
+
+x=np.array(x1[(-M-1):-1] + Padding + x1[0:-M])  
+
+xf=np.fft.fft(x)
+xf1=np.fft.fftshift(xf)
+ixf=np.fft.ifft(xf)
+ixf1=np.fft.fftshift(ixf)
+
+w = [-m.pi + 2* m.pi*x/255 for x in range(256)]
+
+plt.plot(w,xf1,'--')       ### xf1=shift of fft
+plt.show()
+
+t = [x-117 for x in range(256)]
+
+plt.stem(t,ixf1)
+plt.show()
