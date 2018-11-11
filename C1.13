@@ -1,0 +1,81 @@
+#!usr/bin/python
+from __future__ import division
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import math as m
+
+L,M = 256,10 #Defining the parameters l and M in advance in favour of scalability
+
+def r(k):
+	""" ACS """
+	return ((M-abs(k))/M) if (k>=-M and k<=M) else 0	
+
+def myFFT(w,r,k):
+	""" ACS """
+	return r*(m.cos(w*k) - 1j*m.sin(w*k)/256)
+
+#QUESTION A
+	
+x1 = [((M-abs(k))/M) for k in range(-M,M+1)]	
+Padding = [0 for x in range(L-(2*M+1))]
+acs = x1[(-M-1):-1] + x1[0:-M] 
+acs2 = x1[0:-M]+x1[(-M):]  
+acsM = x1[(-M-1):-1] + Padding + x1[0:-M] 
+acsMM = x1 + Padding
+
+#Computing the fft of the sequence
+fw = [myFFT(((2*m.pi*y)/L),r(y),y) for y in range(-M,M+1)]
+acsF = np.fft.fft(acs,n=L)#compute the fft of the sequence
+PSD = sum(acsF)#take the sum
+print('PSD without padding:',PSD,'\n')
+
+#Computing the PSD with padding in the middle of the autocovariance sequence
+acsFF = np.fft.fft(acsM)
+PSDFF = sum(acsFF)
+print('PSD with padding in the middle:',PSDFF,'\n')
+
+#Computing the PSD with padding in the end of the autocovariance sequence
+acsFFF = np.fft.fft(acsMM)
+PSDFFF = sum(acsFFF)
+print('PSD with padding in the end:',PSDFFF,'\n')
+
+L = [" middle ",abs(PSD - PSDFF)] if (abs(PSD - PSDFF) < abs(PSD - PSDFFF)) else ["end",abs(PSD - PSDFFF)]
+print('Padding in the' + L[0] + 'gives us a far better approximation of the PSD. In this case the error is:',L[1],'\n')
+
+def grafiki(y,titlos,A,B):
+	x = plt.figure(y,figsize=(8,4))
+	plt.subplot(211)
+	red_patch = mpatches.Patch(color='red',label='DTFT')
+	plt.legend(handles=[red_patch])
+	plt.title(titlos)
+	plt.xlabel('k', fontsize=10)
+	plt.ylabel('F{r(k)}', fontsize=16)
+	plt.plot(A,linestyle='-',color='r')
+	plt.subplot(212)
+	blue_patch = mpatches.Patch(color='blue',label='ACS')
+	plt.legend(handles=[blue_patch])
+	plt.xlabel('k', fontsize=10)
+	plt.ylabel('r(k)', fontsize=16)
+	plt.plot(B,linestyle='-',color='b')
+
+grafiki(1,'Without padding',acsF,acs)
+grafiki(2,'With padding in the middle',acsFF,acsM)
+grafiki(3,'With padding in the end',acsFFF,acsMM)
+plt.show()
+
+#QUESTION B
+
+acs_b = [((M-abs(k))/M) for k in range(-M,M+1)]	
+fwSamples = [((2*k*m.pi)/256) for k in range(0,256)]
+yf = []
+for x in range(len(fwSamples)):
+	temp = 0
+	for y in range(len(acs_b)):
+		temp = temp + myFFT(fwSamples[x],acs_b[y],x)
+	yf.append(temp)
+siftyf = sum(np.fft.ifft(yf))
+sacs = sum(acs_b)	
+print('Sum of the inverse fourier transform of the yf where yf = [f(0)....f((L-1*2p)/L)] vector:',siftyf,'\n')
+print('Sum of the acs:',sacs,'\n')
+print('We verify that y closely approximates the ACS.')
